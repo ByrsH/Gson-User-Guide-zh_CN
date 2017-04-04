@@ -56,7 +56,7 @@ Gson 最初被创建是用于Google内部的一些项目，现在被用于很多
 
 ## 使用Gson
 
-主要的类是[Gson]（https://github.com/google/gson/blob/master/gson/src/main/java/com/google/gson/Gson.java），你可以仅仅调用 new Gson() 来创建一个实例。当然也有一个类的 [GsonBuilder](https://github.com/google/gson/blob/master/gson/src/main/java/com/google/gson/GsonBuilder.java)可用的，它可以设置各种各样的属性来构建一个Gson实例，例如版本控制等等。
+主要的类是[Gson](https://github.com/google/gson/blob/master/gson/src/main/java/com/google/gson/Gson.java)，你可以仅仅调用 new Gson() 来创建一个实例。当然也有一个类的 [GsonBuilder](https://github.com/google/gson/blob/master/gson/src/main/java/com/google/gson/GsonBuilder.java)可用的，它可以设置各种各样的属性来构建一个Gson实例，例如版本控制等等。
 
 当调用json操作时，Gson实例是不维持任何状态的。因此，你可以自由的重复使用同一个对象来操作多个json序列化和反序列化。
 
