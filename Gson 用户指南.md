@@ -7,7 +7,7 @@ Gson 是一个能够用于转换 Java 对象到JSON表达式的 Java库。它当
 Gson 能够处理任意的 Java对象，包括你没有源代码的现有对象。
 
 
-##Gson的目标
+## Gson的目标
 
 -  提供简单的使用方式，例如 toString() 和 构造器（工厂方法）用于Java 和 JSON之间的转换。
 
