@@ -9,6 +9,7 @@ public class BagOfPrimitives {
     private int value1 = 1;
     private String value2 = "abc";
     private transient int value3 = 3;
+    private Integer value4;
     //不能循环引用，将会造成无限递归
     //private BagOfPrimitives bagOfPrimitives = new BagOfPrimitives();
     BagOfPrimitives() {
@@ -24,7 +25,7 @@ public class BagOfPrimitives {
 
         //Deserialization
         BagOfPrimitives obj2 = gson.fromJson(json, BagOfPrimitives.class);
-        System.out.println(obj2);
+        System.out.println(obj2.value4);
     }
 
 }

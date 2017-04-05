@@ -124,3 +124,110 @@ String json = gson.toJson(obj);
 // DeserializationBagOfPrimitives obj2 = gson.fromJson(json, BagOfPrimitives.class);
 // ==> obj2 is just like obj
 ```
+
+#### 对象操作的细节
+
+
+
+- 最好（推荐）使用私有字段
+
+
+- 不需要使用任何注释去表明一个字段包含序列化和反序列化。当前类（和继承父类）的所有的字段都默认包含
+
+
+-  如果一个字段被标记为 transient，（默认）它是被忽略的，JSON序列化和反序列化时不包含其中
+
+
+- 这个实现能正确的处理 null
+
+
+- 当序列化时，输出将会跳过值为null的字段
+
+
+- 当反序列化时，JSON结果中没有的字段，对象对应的字段将会设置为null
+
+
+-  如果一个字段是 synthetic 的，那么它将被忽略，JSON序列化和反序列化不包括它
+
+
+- 在内部类、匿名类和本地类中对应于外部类的字段是忽略的，并且不包括在序列化和反序列化中
+
+
+
+### 嵌套类（包括内部类）
+
+Gson 可以很容易的序列化静态嵌套类。
+
+Gson 同样也可以反序列化静态嵌套类。但是，Gson不能自动的反序列化纯的内部类，由于它们的无参构造器需要一个引用包含反序列化时不可用的对象。你可以通过使内部类静态化或者提供一个实例构造器来解决这个问题。下面有一个例子：
+
+```
+public class A { 
+  public String a; 
+
+  class B { 
+
+    public String b; 
+
+    public B() {
+      // No args constructor for B
+    }
+  } 
+}
+```
+
+注意：上面的B类（默认）不能使用Gson序列化。
+
+Gson 不能反序列化 {"b":"abc"} 为一个B的实例，由于类B是一个内部类。如果内部类B是静态类那么Gson将能够反序列化这个字符串。另一个解决方案是写一个类B的实例构造器。
+
+```
+public class InstanceCreatorForB implements InstanceCreator<A.B> {
+  private final A a;
+  public InstanceCreatorForB(A a)  {
+    this.a = a;
+  }
+  public A.B createInstance(Type type) {
+    return a.new B();
+  }
+}
+```
+上面的代码是可行的，但是不推荐。
+
+
+### 数组例子
+
+```
+Gson gson = new Gson();
+int[] ints = {1, 2, 3, 4, 5};
+String[] strings = {"abc", "def", "ghi"};
+
+// Serialization
+gson.toJson(ints);     // ==> [1,2,3,4,5]
+gson.toJson(strings);  // ==> ["abc", "def", "ghi"]
+
+// Deserializationint[] ints2 = gson.fromJson("[1,2,3,4,5]", int[].class); 
+// ==> ints2 will be same as ints
+```
+
+我们将支持多维数组和各种各样的混合元素类型。
+
+
+### 集合例子
+
+```
+Gson gson = new Gson();
+Collection<Integer> ints = Lists.immutableList(1,2,3,4,5);
+
+// SerializationString json = gson.toJson(ints);  // ==> json is [1,2,3,4,5]
+
+// DeserializationType collectionType = new TypeToken<Collection<Integer>>(){}.getType();
+Collection<Integer> ints2 = gson.fromJson(json, collectionType);
+// ==> ints2 is same as ints
+```
+
+相当可怕的：注意我们怎样定义集合的类型。不幸的是，我们没有办法不使用这个java方法。
+
+
+#### 集合限制
+
+Gson 能够序列化任意的对象集合，但是不能反序列化它们。因为使用者没有方法指出结果对象的类型，然而，当反序列化时，集合必须有一个明确的、泛型类型。这个很容易明白，当遵循好的java编码实践时很少出现这个问题。
+
