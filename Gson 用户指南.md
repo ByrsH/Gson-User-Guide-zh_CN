@@ -231,3 +231,31 @@ Collection<Integer> ints2 = gson.fromJson(json, collectionType);
 
 Gson 能够序列化任意的对象集合，但是不能反序列化它们。因为使用者没有方法指出结果对象的类型，然而，当反序列化时，集合必须有一个明确的、泛型类型。这个很容易明白，当遵循好的java编码实践时很少出现这个问题。
 
+
+### 序列化和反序列化泛型类型
+
+当你调用 toJson(obj) 时，Gson会调用 obj.getClass() 方法得到类的字段信息从而序列化。类似的，你也可以通过 Myclass.class 方式得到对象信息，在方法 fromJson(json, MyClass.class) 中使用。这种方法对于非泛型类型的对象很适用。但是，如果这个对象是一个泛型类型，那么泛型类型的信息会丢失，因为 Java 类型擦除。这里有一个例子说明了这一点：
+
+```
+class Foo<T> {
+  T value;
+}
+Gson gson = new Gson();
+Foo<Bar> foo = new Foo<Bar>();
+gson.toJson(foo); // May not serialize foo.value correctly
+
+gson.fromJson(json, foo.getClass()); // Fails to deserialize foo.value as Bar
+```
+
+以上代码不能解释值为 Bar 类型，因为Gson调用 list.getClass() 方法得到它的类信息，但是这个方法返回一个原始类：Foo.class 。这意味着Gson没有方法知道这是一个类型为 Foo<Bar> 的对象，而不仅仅是普通的Foo。
+
+你可以通过指定当前参数类型为你的泛型类型来解决这个问题， 可以通过使用 TypeToken 类来实现。
+
+```
+Type fooType = new TypeToken<Foo<Bar>>() {}.getType();
+gson.toJson(foo, fooType);
+
+gson.fromJson(json, fooType);
+```
+
+用于得到 fooType 的方式实际上定义了一个匿名的本地内部类，这个类包含 getType() 方法，该方法返回完全参数化类型。
