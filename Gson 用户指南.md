@@ -259,3 +259,40 @@ gson.fromJson(json, fooType);
 ```
 
 用于得到 fooType 的方式实际上定义了一个匿名的本地内部类，这个类包含 getType() 方法，该方法返回完全参数化类型。
+
+
+### 序列化和反序列化任意类型对象集合
+
+有时候你会处理包含不同类型的 JSON 数组，例如： ['hello', 5, {name:'GREETINGS', source:'guest'}]。
+
+与其等价的 Collection 包含下面这些：
+
+```
+Collection collection = new ArrayList();
+collection.add("hello);
+collection.add(5);
+collection.add(new Event("GREETINGS", "guest"));
+```
+
+Event 类的定义在下面：
+
+```
+class Event {
+  private String name;
+  private String source;
+  private Event(String name, String source) {
+    this.name = name;
+    this.source = source;
+  }
+}
+```
+
+你能够使用 Gson 序列化这个集合，不用做其他任何事情，通过 toJson(collection) 就会得到想要的输出。
+
+然而，不能通过 fromJson(json, Collection.class) 方式反序列化这个集合，因为Gson不知道怎样映射这个输入到对应的类型。Gson要求你提供一个集合的泛型版本类型在方法 fromJson() 中。那么，你有三个选择：
+
+1. 使用 Gson的解析器API（低级的流解析器或者DOM解析器 JsonParser）去解析数组元素，然后对每一个数组元素使用 Gson.fromJson() 。这个方式是首选。这里有一个[范例](https://github.com/google/gson/blob/master/extras/src/main/java/com/google/gson/extras/examples/rawcollections/RawCollectionsExample.java)
+2.  为 Collection.class 注册一个类型适配器，查看数组的每一个成员，并且映射它们为合适的对象。这种方式的缺点是将会造成Gson反序列化其他的集合时出错。
+3.  为 MyCollectionMemberType注册一个类型适配器，并且把 Collection<MyCollectionMemberType> 用于 fromJson() 方法。
+
+只有数组作为一个顶级元素出现，或者你可以改变字段类型使改集合类型为 Collection<MyCollectionMemberType>时，此方法是实用的。
