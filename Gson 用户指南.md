@@ -296,3 +296,41 @@ class Event {
 3.  为 MyCollectionMemberType注册一个类型适配器，并且把 Collection<MyCollectionMemberType> 用于 fromJson() 方法。
 
 只有数组作为一个顶级元素出现，或者你可以改变字段类型使改集合类型为 Collection<MyCollectionMemberType>时，此方法是实用的。
+
+
+### 内置的序列化器和反序列化器
+
+Gson对于常用的类有内置的序列化器和反序列化器，它的默认表示可能是不适用的。下面列出这些类：
+
+
+
+1.  使用字符串像 "https://github.com/google/gson/" 去匹配 java.net.URL
+2.  使用字符串像 "/google/gson/" 去匹配 "java.net.URI"
+
+
+你可以找到这些通用类的源代码，例如 [JodaTime](https://sites.google.com/site/gson/gson-type-adapters-for-common-classes-1)
+
+
+### 自定义序列化和反序列化
+
+有时候默认的表示不是你想要的。当你处理库类（DateTime, 等）是经常会遇到这种情况。Gson允许你注册你自定义的序列化器和反序列化器。通过定义两个部分来完成：
+
+
+- Json 序列化： 需要为一个对象定义自定义序列化
+
+
+- Json 反序列化：需要为一个类型定义自定义序列化
+
+
+- 实例构造器：如果无参构造器是可用的或者反序列化被注册，那么是不需要的
+
+
+```
+GsonBuilder gson = new GsonBuilder();
+gson.registerTypeAdapter(MyType2.class, new MyTypeAdapter());
+gson.registerTypeAdapter(MyType.class, new MySerializer());
+gson.registerTypeAdapter(MyType.class, new MyDeserializer());
+gson.registerTypeAdapter(MyType.class, new MyInstanceCreator());
+```
+
+registerTypeAdapter 调用检查类型适配器实现的接口是否超过了这些接口，并且把它们都注册。
