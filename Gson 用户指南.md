@@ -334,3 +334,55 @@ gson.registerTypeAdapter(MyType.class, new MyInstanceCreator());
 ```
 
 registerTypeAdapter 调用检查类型适配器实现的接口是否超过了这些接口，并且把它们都注册。
+
+#### 写一个序列化器
+
+这里有一个例子，展示了怎样为 JodaTime DateTime 类写一个自定义序列化器。
+
+```
+private class DateTimeSerializer implements JsonSerializer<DateTime> {
+  public JsonElement serialize(DateTime src, Type typeOfSrc, JsonSerializationContext context) {
+    return new JsonPrimitive(src.toString());
+  }
+}
+```
+
+当序列化时，运行的是一个 DateTime 对象，Gson 调用 serialize()。
+译注： 先注册自定义的DateTimeSerializer，然后使用生成的gson实例调用 toJSON() 方法， 可以查看Example文件夹下的CustomTest.java 例子。
+
+
+#### 写一个反序列化器
+
+这里有一个例子，展示了怎样为 JodaTime DateTime 类写一个自定义反序列化器。
+
+```
+private class DateTimeDeserializer implements JsonDeserializer<DateTime> {
+  public DateTime deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+      throws JsonParseException {
+    return new DateTime(json.getAsJsonPrimitive().getAsString());
+  }
+}
+```
+
+当反序列化一个格式是 DateTime 对象的JSON字符串时，Gson调用 deserialize。
+
+
+#### 序列化器和反序列化器的更细节处
+
+通常你想为对于原生类型的所有通用泛型类型注册一个单处理程序。
+
+
+
+-  例如，假设你有一个表示/翻译 id 的 Id 类（即一个内部或外部表示）
+
+
+- Id<T>类型对所有泛型类型有同样的序列化
+
+     本质上是输出id的值
+
+
+- 反序列化是非常相似的，但是不是一样的
+
+    需要调用 new Id(Class<T>, String)， 它会返回一个 Id<T> 的实例
+
+Gson支持为这个注册一个单处理程序。你也可以为一个特定的泛型类型（表明Id<RequiresSpecialHanding> 需要特定的处理）注册一个特定的处理程序。方法 toJson() 和 fromJson() 包含泛型类型的信息，为了帮助你写一个对于同样的原生类型的通用泛型类型注册一个单处理程序。
