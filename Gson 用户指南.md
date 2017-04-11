@@ -386,3 +386,73 @@ private class DateTimeDeserializer implements JsonDeserializer<DateTime> {
     需要调用 new Id(Class<T>, String)， 它会返回一个 Id<T> 的实例
 
 Gson支持为这个注册一个单处理程序。你也可以为一个特定的泛型类型（表明Id<RequiresSpecialHanding> 需要特定的处理）注册一个特定的处理程序。方法 toJson() 和 fromJson() 包含泛型类型的信息，为了帮助你写一个对于同样的原生类型的通用泛型类型注册一个单处理程序。
+
+### 写一个实例创造器
+
+当反序列化一个对象时，Gson需要创造这个类的默认实例。用于序列化和反序列化的规范的类应该有一个无参的构造函数。
+
+
+- public和private都可以
+
+
+通常，当你处理一个没有定义无参构造器的库类时需要实例构造器。
+
+#### 实例构造器例子
+
+```
+private class MoneyInstanceCreator implements InstanceCreator<Money> {
+  public Money createInstance(Type type) {
+    return new Money("1000000", CurrencyCode.USD);
+  }
+}
+```
+
+类型可以是一个通用的泛型类型
+
+
+
+- 对于调用构造器，特定泛型类型信息是非常有用的
+
+
+- 例如，如果Id类存储正在创建Id的类
+
+
+#### 一个参数化类型的InstanceCreator 
+
+有时候你尝试实例化一个参数化类型。通常，由于实际实例是原生类型，所以这没什么问题。下面是一个例子：
+
+```
+class MyList<T> extends ArrayList<T> {
+}
+
+class MyListInstanceCreator implements InstanceCreator<MyList<?>> {
+    @SuppressWarnings("unchecked")
+  public MyList<?> createInstance(Type type) {
+    // No need to use a parameterized list since the actual instance will have the raw type anyway.
+    return new MyList();
+  }
+}
+```
+
+然而，有时候你需要创建一个基于实际参数化类型的实例。在这中情况下，你可以使用类型参数传递给 createInstance 方法。下面有个例子：
+
+```
+public class Id<T> {
+  private final Class<T> classOfId;
+  private final long value;
+  public Id(Class<T> classOfId, long value) {
+    this.classOfId = classOfId;
+    this.value = value;
+  }
+}
+
+class IdInstanceCreator implements InstanceCreator<Id<?>> {
+  public Id<?> createInstance(Type type) {
+    Type[] typeParameters = ((ParameterizedType)type).getActualTypeArguments();
+    Type idType = typeParameters[0]; // Id has only one parameterized type T
+    return Id.get((Class)idType, 0L);
+  }
+}
+```
+
+在上面的例子中，类Id在没有传递参数化类型的实际类型的情况下不能创建实例。我们可以通过使用传递方法参数 type 来解决这个问题。 这个例子中的 type 对象是java参数化的类型，表达式 Id<Foo> 表明实际实例应该绑定为Id<Foo> 类。 由于类Id有一个参数化的类型参数 T，我们使用 getActualTypeArgument() 返回的这个类型的零元素数组，在这种情况下将保存Foo.class。
