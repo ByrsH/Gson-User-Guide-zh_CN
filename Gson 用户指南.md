@@ -456,3 +456,64 @@ class IdInstanceCreator implements InstanceCreator<Id<?>> {
 ```
 
 在上面的例子中，类Id在没有传递参数化类型的实际类型的情况下不能创建实例。我们可以通过使用传递方法参数 type 来解决这个问题。 这个例子中的 type 对象是java参数化的类型，表达式 Id<Foo> 表明实际实例应该绑定为Id<Foo> 类。 由于类Id有一个参数化的类型参数 T，我们使用 getActualTypeArgument() 返回的这个类型的零元素数组，在这种情况下将保存Foo.class。
+
+
+### 紧凑的 vs 漂亮的格式化输出 JSON 
+
+Gson 默认的 JSON输出是紧凑的JSON格式。这意味着输出的JSON结构中将不会有任何的空格。因此，在输出的JSON中，数组中的字段名和值之间、对象字段和对象之间将不会有空格。同样， "null"字段将被忽略（注意：null值将仍然包含在对象的集合/数组中）。在 Null 对象支持 部分有配置Gson输出所有null值的信息。
+
+如果你想使用漂亮的打印属性，你必须使用GsonBuilder来配置Gson实例。这个 JsonFormatter 通过我们公共的API没有暴露出来，所以客户端不能为JSON输出配置默认打印设置/边距。目前，我们仅仅提供了一个默认的 JsonPrintFormatter , 它默认一行80个字符长度，2个字符缩进和4个字符右边距。
+
+下面是一个例子，展示了怎样使用默认的 JsonPrintFormatter 配置一个Gson实例来代替 JsonCompactFormatter:
+
+```
+Gson gson = new GsonBuilder().setPrettyPrinting().create();
+String jsonOutput = gson.toJson(someObject);
+```
+
+### Null 对象支持
+
+在Gson中对 null 对象字段处理的默认行为是忽略。这个允许为了更紧凑的格式化输出；然而，客户必须为这些字段定义一个默认值为JSON格式转换回Java形式
+
+这里有怎样配置一个Gson实例输出 null ：
+
+```
+Gson gson = new GsonBuilder().serializeNulls().create();
+```
+
+注意：当用Gson序列化 null 时，它将添加一个 JsonNull 元素到 JsonElement 结构。因此，这个对象能够用于自定义序列化/反序列化。
+
+这里有一个例子：
+
+```
+public class Foo {
+  private final String s;
+  private final int i;
+
+  public Foo() {
+    this(null, 5);
+  }
+
+  public Foo(String s, int i) {
+    this.s = s;
+    this.i = i;
+  }
+}
+
+Gson gson = new GsonBuilder().serializeNulls().create();
+Foo foo = new Foo();
+String json = gson.toJson(foo);
+System.out.println(json);
+
+json = gson.toJson(null);
+System.out.println(json);
+```
+
+输出：
+
+```
+{"s":null,"i":5}
+null
+```
+
+
