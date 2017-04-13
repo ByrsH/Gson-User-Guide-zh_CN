@@ -516,4 +516,39 @@ System.out.println(json);
 null
 ```
 
+### 版本控制支持
+
+同一个对象的多个版本能够通过使用 @Since注解来维护。这个注解能够被用在类上、字段上和未来版本、方法上。为了利用这个特性，你必须配置你的Gson实例，让它忽略那些比现版本号大的任何字段/对象。如果没有设置Gson实例，那么它将序列化和反序列所有的字段和类，不管什么版本。
+
+```
+public class VersionedClass {
+  @Since(1.1) private final String newerField;
+  @Since(1.0) private final String newField;
+  private final String field;
+
+  public VersionedClass() {
+    this.newerField = "newer";
+    this.newField = "new";
+    this.field = "old";
+  }
+}
+
+VersionedClass versionedObject = new VersionedClass();
+Gson gson = new GsonBuilder().setVersion(1.0).create();
+String jsonOutput = gson.toJson(someObject);
+System.out.println(jsonOutput);
+System.out.println();
+
+gson = new Gson();
+jsonOutput = gson.toJson(someObject);
+System.out.println(jsonOutput);
+```
+
+输出：
+
+```
+{"newField":"new","field":"old"}
+
+{"newerField":"newer","newField":"new","field":"old"}
+```
 
