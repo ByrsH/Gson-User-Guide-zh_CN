@@ -552,3 +552,89 @@ System.out.println(jsonOutput);
 {"newerField":"newer","newField":"new","field":"old"}
 ```
 
+### 不包括字段的序列化和反序列化
+
+Gson支持许多机制来排除顶层的类、字段和字段类型。以下是可插拔机制来允许字段和类的排除。如果以下机制不满足你的需要，那么你可以使用自定义的序列化器和反序列化器。
+
+#### java修饰符排除
+
+默认情况下，如果你使用修饰符 transient 标注一个字段，它将被排除。同样，如果一个字段被标注为 static ，那么默认也将被排除。如果你想包括一些 transient 字段，那么按照下面这样做：
+
+```
+import java.lang.reflect.Modifier;
+Gson gson = new GsonBuilder()
+    .excludeFieldsWithModifiers(Modifier.STATIC)
+    .create();
+```
+
+注意：你可以得到所有 Modifier 常量对于方法 excludeFieldsWithModifiers。例如：
+
+```
+Gson gson = new GsonBuilder()
+    .excludeFieldsWithModifiers(Modifier.STATIC, Modifier.TRANSIENT, Modifier.VOLATILE)
+    .create();
+```
+
+#### Gson的 @Expose
+
+这个特性提供了一种方式，你可以标注对象的某些字段来排除它们的序列化和反序列化到JSON。为了使用这个注解，你必须使用 new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create() 来创建Gson。这个Gson实例将排除在类中没有标记 @Expose 注解的字段。
+
+#### 用户自定义排除策略
+
+如果以上的排除字段和类类型的机制不能满足你的需求，那么你可以写你自己的排除策略，并且把它插入Gson中。更多信息可以查看[ExclusionStrategy](http://google.github.io/gson/apidocs/com/google/gson/ExclusionStrategy.html) 文档。
+
+下面的例子展示了如何使用特定的 @Foo 注解来排除字段和排除类的顶级String类型（后者声明的字段类型）。
+
+```
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD})
+public @interface Foo {
+  // Field tag only annotation
+}
+
+public class SampleObjectForTest {
+  @Foo private final int annotatedField;
+  private final String stringField;
+  private final long longField;
+  private final Class<?> clazzField;
+
+  public SampleObjectForTest() {
+    annotatedField = 5;
+    stringField = "someDefaultValue";
+    longField = 1234;
+  }
+}
+
+public class MyExclusionStrategy implements ExclusionStrategy {
+  private final Class<?> typeToSkip;
+
+  private MyExclusionStrategy(Class<?> typeToSkip) {
+    this.typeToSkip = typeToSkip;
+  }
+
+  public boolean shouldSkipClass(Class<?> clazz) {
+    return (clazz == typeToSkip);
+  }
+
+  public boolean shouldSkipField(FieldAttributes f) {
+    return f.getAnnotation(Foo.class) != null;
+  }
+}
+
+public static void main(String[] args) {
+  Gson gson = new GsonBuilder()
+      .setExclusionStrategies(new MyExclusionStrategy(String.class))
+      .serializeNulls()
+      .create();
+  SampleObjectForTest src = new SampleObjectForTest();
+  String json = gson.toJson(src);
+  System.out.println(json);
+}
+```
+
+输出是：
+
+```
+{"longField":1234}
+```
+
