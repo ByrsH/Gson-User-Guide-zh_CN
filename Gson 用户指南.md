@@ -638,3 +638,62 @@ public static void main(String[] args) {
 {"longField":1234}
 ```
 
+#### JSON 字段命名支持
+
+Gson支持一些预定义字段命名策略，使其能够转换成标准的java字段名称（也就是，以小写字母开头的驼峰命名法---sampleFieldNameInJava） 到一个Json字段名称（也就是，sample_field_name_in_java 或者 SampleFieldNameInJava）。关于预定义命名策略可以查看类 [FieldNamingPolicy](http://google.github.io/gson/apidocs/com/google/gson/FieldNamingPolicy.html)。
+
+它也有个基于注释的策略，允许客户在每一个字段上自定义命名。注意，这个基于注释的策略有字段名称检验，如果一个无效的字段名称作为注释值被提供，那么将会抛出运行时异常。
+
+下面是一个例子，展示了如何使用Gson命名策略特性：
+
+```
+private class SomeObject {
+  @SerializedName("custom_naming") private final String someField;
+  private final String someOtherField;
+
+  public SomeObject(String a, String b) {
+    this.someField = a;
+    this.someOtherField = b;
+  }
+}
+
+SomeObject someObject = new SomeObject("first", "second");
+Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
+String jsonRepresentation = gson.toJson(someObject);
+System.out.println(jsonRepresentation);
+```
+
+输出：
+
+```
+{"custom_naming":"first","SomeOtherField":"second"}
+```
+
+如果你需要自定义命名策略（看这个[讨论](http://groups.google.com/group/google-gson/browse_thread/thread/cb441a2d717f6892)）， 你可以使用 [@SerializedName](http://google.github.io/gson/apidocs/com/google/gson/annotations/SerializedName.html) 注释。
+
+
+#### 共享自定义序列化器和反序列化器之间的状态
+
+有时候你需要共享自定义序列化器/反序列化器之间的状态（看这个[讨论](http://groups.google.com/group/google-gson/browse_thread/thread/2850010691ea09fb)）。你可以使用下面三个策略来完成它：
+
+
+	1. 存储共享状态到静态字段
+	2. 作为内部类声明一个父类型的序列化器/反序列化器，使用这个父类型实例的字段存储共享状态
+	3. 使用java的 ThreadLocal
+
+
+1和2是线程不安全的，3是安全的。
+
+#### 流
+
+此外，Gson的对象模型和数据绑定，你可以使用Gson从一个[流](https://sites.google.com/site/gson/streaming)中读取和写入。你也可以结合流和对象模型访问得到最好的方法。
+
+
+### Gson设计包含的问题
+
+当设计Gson时我们为面对的issues讨论建立的[Gson设计文档](https://github.com/google/gson/blob/master/GsonDesignDocument.md)。它也包含了Gson和其他能够转换Json的java库的比较。
+
+
+### 未来对Gson的增强
+
+对于最近提出的增强，或者你有什么新的建议，请参阅部分 [Issues](https://github.com/google/gson/issues) 站点。
